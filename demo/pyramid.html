@@ -42,150 +42,30 @@
 	<script>
 	// import {generateStripeTexture} from './generateTexture.js'
 	// import {perlin3} from './perlin.js'
-	const white = '#ffffff';
-	const grey = '#f2f2f2';
-	const blue= '#0000ff';
-	const yellow= '#ffff00';
-	const pink= '#ec28ff';
-	const green= '#00ff4e';
-	const red= '#ff3810';
-	const black = '#000000'
-	const helixColors1 = {
-		bg: yellow,
-		text: pink,
-		bg2: pink,
-		text2: pink,
-		bg3: yellow,
-		text3: pink,
-		bg4: pink,
-		text4: white,
-	}
-	const helixColors2 = {
-		bg: blue,
-		text: green,
-		bg2: green,
-		text2: green,
-		bg3: blue,
-		text3: white,
-		bg4: green,
-		text4: blue,
-	}
-	const helixColors = {
-		bg: pink,
-		text: blue,
-		bg2: blue,
-		text2: blue,
-		bg3: yellow,
-		text3: black,
-		bg4: blue,
-		text4: pink,
-	}
-	let torusTexture
-	let torusMaterial
-	let helixMesh
-	const helixGroup = new THREE.Group()
-	torusTexture = new THREE.Texture(
-		generate4StripeTexture('EVERYTHING IS MUSIC ', helixColors)
-	)
-	torusTexture.anisotropy = 4
-	const meshProps = {
-		width: 30,
-		height: 1,
-		speed: 0.009,
-		poligons: 240,
-	}
-	
-	torusTexture.needsUpdate = true
-	torusTexture.wrapS = THREE.RepeatWrapping
-	torusTexture.wrapT = THREE.RepeatWrapping
-	torusTexture.repeat.set(
-		3,
-		1
-	)
-
-	torusMaterial = new THREE.MeshBasicMaterial({map: torusTexture})
-	torusMaterial.map.needsUpdate = true
-	
-	// OBJECT
-	const helixPoint = (a, b, t) => new THREE.Vector3(-a * Math.cos(t), -b * t, a * Math.sin(t))
-	
-	const helixPointsArray = (a, b) => {
-		const curvePoints = []
-		
-		for (let t = -11; t < 11; t += 1) {
-			curvePoints.push(helixPoint(a, b, t))
-		}
-		return curvePoints
-	}
-	
-	const spiralSpline = new THREE.CatmullRomCurve3(helixPointsArray(40, 10))
-	
-	const helixGeometry = new THREE.TubeBufferGeometry(
-		spiralSpline,
-		240,
-		16,
-		4,
-		false
-	)
-	
-	// START CAP
-	const pos = helixGeometry.attributes.position
-	const startPoints = []
-	startPoints.push(spiralSpline.getPoint(0))
-	for (let i = 0; i <= helixGeometry.parameters.radialSegments; i++) {
-		startPoints.push(new THREE.Vector3().fromBufferAttribute(pos, i))
-	}
-	console.log(startPoints.length)
-	
-	const pointsStartGeom = new THREE.BufferGeometry().setFromPoints(startPoints)
-	const psgPos = pointsStartGeom.attributes.position
-	const indexStart = []
-	for (let i = 1; i < psgPos.count - 1; i++) {
-		indexStart.push(0, i, i + 1)
-	}
-	pointsStartGeom.setIndex(indexStart)
-	
-	const pointsStart = new THREE.Points(pointsStartGeom, new THREE.PointsMaterial({size: 0.25, color: 0x0000ff}))
-	console.log(pointsStartGeom)
-	const shapeStart = new THREE.Mesh(pointsStartGeom, new THREE.MeshBasicMaterial({color: Object.values(helixColors)[0]}))
-	// scene.add(shapeStart);
-	
-	const endPoints = []
-	endPoints.push(spiralSpline.getPoint(1))
-	for (let i = (helixGeometry.parameters.radialSegments + 1) * helixGeometry.parameters.tubularSegments; i < pos.count; i++) {
-		endPoints.push(new THREE.Vector3().fromBufferAttribute(pos, i))
-	}
-	const pointsEndGeom = new THREE.BufferGeometry().setFromPoints(endPoints)
-	const pegPos = pointsEndGeom.attributes.position
-	const indexEnd = []
-	for (let i = 1; i < pegPos.count - 1; i++) {
-		indexEnd.push(0, i + 1, i)
-	}
-	pointsEndGeom.setIndex(indexEnd)
-	const pointsEnd = new THREE.Points(pointsEndGeom, new THREE.PointsMaterial({color: 'magenta', size: 0.25}))
-	// scene.add(pointsEnd)
-	const shapeEnd = new THREE.Mesh(pointsEndGeom, new THREE.MeshBasicMaterial({color: Object.values(helixColors)[0]}))
-	// scene.add(shapeEnd)
-	
-	// END CAP
-	
-	helixMesh = new THREE.Mesh(helixGeometry, torusMaterial)
-	// helixMesh.position.set(0, -0.1, 0)
-	// helixMesh.rotation.set(0, 0, -Math.PI / 4)
-	// helixMesh.scale.set(0.003, 0.003, 0.003)
-	
-	helixGroup.add(helixMesh)
-	helixGroup.add(shapeStart)
-	helixGroup.add(shapeEnd)
-	helixGroup.position.set(0, -0.1, 0)
-	helixGroup.rotation.set(0, 0, -Math.PI / 4)
-	helixGroup.scale.set(1, 1, 1)
 	var scene = new THREE.Scene()
 	var renderer = new THREE.WebGLRenderer({
 		antialias: true,
 		alpha: true
 	})
-	scene.add(helixGroup)
+	var clock = new THREE.Clock()
+	const helixColors = {
+		main: '#FFFFFF',
+		second: '#0000ff',
+	}
+	const pyramidGeometry = new THREE.ConeGeometry(1, 1.4, 3, 1)
+    const pyramidTexture = new THREE.Texture(
+      generateStripeTexture('M', helixColors)
+    )
+    pyramidTexture.needsUpdate = true
+    pyramidTexture.wrapS = THREE.RepeatWrapping
+    pyramidTexture.wrapT = THREE.RepeatWrapping
+    pyramidTexture.repeat.set(4, 2)
+    pyramidTexture.anisotropy = 8
+    const pyramidMaterial = new THREE.MeshBasicMaterial({map: pyramidTexture})
+    const pyramid = new THREE.Mesh(pyramidGeometry, pyramidMaterial)
+    pyramid.scale.set(1, 1, 1)
+    // pyramid.position.set(-0.1, 0.1, 0.3)
+    scene.add(pyramid)
 	// renderer.physicallyCorrectLights = true
 	var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000)
 	camera.position.z = 200
@@ -290,9 +170,8 @@
 			// 	mesh.rotation.x += 0.008 + i / 700
 			// 	mesh.rotation.y += 0.003 + i / 400
 			// })
-			 helixGroup.rotateOnAxis(new THREE.Vector3(0, 1, 0), 0.008)
-			  torusTexture.offset.x -= 0.005
-			  torusTexture.needsUpdate = true
+			pyramidTexture.offset.x -= 0.01
+        	// pyramid.rotateOnAxis(new THREE.Vector3(0.27216, 0.68041, 0.68041), 0.016)
 		}
 		
 		if (!this.state.pausedRenderer) {

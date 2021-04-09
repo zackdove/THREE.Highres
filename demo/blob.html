@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>THREE.Highres demo</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+	body {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		background-color: #CCCCCC;
+		color: #333;
+	}
+	
+	.info {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		padding: 20px;
+		font-family: Helvetica, Arial, sans-serif;
+		font-size: 11px;
+	}
+	</style>
+</head>
+
+<body>
+	
+	<div class="info">
+		<strong>Instructions:</strong>
+		<br><br> Press + (plus) to start a rendering.<br> 
+		Press - (minus) to start a depth map rendering.
+	</div>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r123/three.min.js"></script>
+	<script src="OrbitControls.js"></script>
+	<script src="THREE.RealColor.min.js"></script>
+	<script src="../dist/THREE.Highres.min.js"></script>
+	<script src="./generateTexture.js"></script>
+	<script src="./perlin.js"></script>
+	<script>
+	// import {generateStripeTexture} from './generateTexture.js'
+	// import {perlin3} from './perlin.js'
+	var scene = new THREE.Scene()
+	var renderer = new THREE.WebGLRenderer({
+		antialias: true,
+		alpha: true
+	})
+	var clock = new THREE.Clock()
+	const helixColors = {
+		main: '#FFFFFF',
+		second: '#0000ff',
+	}
+	const blobGeometry = new THREE.SphereGeometry(1, 128, 128)
+	const blobMaterial = new THREE.MeshNormalMaterial()
+	const blob = new THREE.Mesh(blobGeometry, blobMaterial)
+
+	blob.scale.set(1, 1, 1)
+	blob.position.set(0, 0, 0)
+	scene.add(blob)
+	console.log(blob)
+	// renderer.physicallyCorrectLights = true
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000)
+	camera.position.z = 200
+	// camera.position.y = -50
+	// camera.position.x = -50
+	
+	// Resize
+	window.addEventListener('resize', onResize, false)
+	function onResize() {
+		camera.aspect = window.innerWidth / window.innerHeight
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight)
+	}
+	onResize()
+	
+	document.body.appendChild(renderer.domElement)
+	var orbit = new THREE.OrbitControls(camera, renderer.domElement);
+	
+	// State
+	var state = {
+		paused: false,
+		pausedRenderer: false
+	}
+	
+	// Highres setup
+	var options = {
+		onStart: () => {
+			this.state.paused = true
+		},
+		onBeforeRender: () => {
+			this.state.pausedRenderer = true
+		},
+		onAfterRender: () => {
+			this.state.pausedRenderer = false
+		},
+		onExit: () => {
+			this.state.paused = false
+		}
+	}
+	
+	var highres = new Highres(renderer, scene, camera, options)
+	highres.enable()
+	
+	// Light
+	// var lights = []
+	// lights[0] = new THREE.PointLight(0xffffff, 1, 0)
+	// lights[1] = new THREE.PointLight(0xffffff, 1, 0)
+	// lights[2] = new THREE.PointLight(0xffffff, 1, 0)
+	// 
+	// lights[0].position.set(0, 200, 0)
+	// lights[1].position.set(100, 200, 100)
+	// // lights[2].position.set(- 100, - 200, - 100)
+	// 
+	// scene.add(lights[0])
+	// scene.add(lights[1])
+	// scene.add(lights[2])
+	
+	// Mesh
+	// var group = new THREE.Object3D()
+	// var geometry = new THREE.TorusKnotGeometry(10, 3, 256, 32, 4, 2)
+	// var mesh
+	// var count = 10
+	// var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'monochrome']
+	// var hue = colors[Math.floor(Math.random() * colors.length)]
+	
+	// for (var i = 0; i < count; i++) {
+	// 	var color = new RealColor().attractiveRandom({hue: hue})
+	// 
+	// 	mesh = new THREE.Mesh(
+	// 		geometry,
+	// 		new THREE.MeshPhysicalMaterial({
+	// 			color: color,
+	// 			metalness: 0,
+	// 			roughness: 0.2,
+	// 			reflectivity: 0.6,
+	// 			// emissive: color.darken(5),
+	// 			side: THREE.DoubleSide,
+	// 			flatShading: Math.random() > 0.5
+	// 		})
+	// 	)
+	// 	var radius = ((i * 10) + 150)
+	// 	var x = radius * Math.sin(i / (count - 1) * 2 * Math.PI)
+	// 	var y = radius * Math.cos(i / (count - 1) * 2 * Math.PI)
+	// 	var z = -i * 50
+	// 
+	// 	if (i > 0) {
+	// 		mesh.position.set(x, y, z)
+	// 	} else {
+	// 		mesh.scale.set(3, 3, 3)
+	// 	}
+	// 	group.add(mesh)
+	// }
+	// 
+	// scene.add(group)
+	
+	// Animate
+	const updateBlob = () => {
+        const agg = performance.now() * 0.00045
+        const k = 1
+        for (let i = 0; i < blob.geometry.vertices.length; i++) {
+          const p = blob.geometry.vertices[i]
+          p.normalize().multiplyScalar(1.0 + 0.3 * perlin3(p.x * k + agg, p.y * k + agg, p.z * k + agg))
+        }
+        blob.geometry.computeVertexNormals()
+        blob.geometry.normalsNeedUpdate = true
+        blob.geometry.verticesNeedUpdate = true
+      }
+	var animate = function () {
+		requestAnimationFrame(animate)
+		
+		if (!this.state.paused) {
+			 updateBlob()
+			// group.children.forEach((mesh, i) => {
+			// 	mesh.rotation.x += 0.008 + i / 700
+			// 	mesh.rotation.y += 0.003 + i / 400
+			// })
+			// pyramidTexture.offset.x -= 0.01
+			// pyramid.rotateOnAxis(new THREE.Vector3(0.27216, 0.68041, 0.68041), 0.016)
+		}
+		
+		if (!this.state.pausedRenderer) {
+			renderer.render(scene, camera)
+		}
+	};
+	// setTimeout(animate, 5000)
+	animate();
+	</script>
+</body>
+
+</html>
